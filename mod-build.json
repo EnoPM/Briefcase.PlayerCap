@@ -1,0 +1,7 @@
+{
+  "repository": "Briefcase.PlayerCap",
+  "target": "PlayerCap",
+  "sdkVersion": "0.3.0",
+  "sdkRepository": "EnoPM/BriefcaseNative",
+  "sdkSha256": ""
+}

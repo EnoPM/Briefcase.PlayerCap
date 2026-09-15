@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "briefcase.player-cap",
+  "name": "Briefcase Player Cap",
+  "author": "BriefcaseNative",
+  "version": "0.2.0",
+  "entry": "Briefcase.PlayerCap.dll",
+  "minimumApi": 1,
+  "loadPhase": "startup",
+  "environment": "server",
+  "capabilities": ["log", "config", "startup.immediate", "server-config.ini"],
+  "iniBindings": {"server-settings": "TripwireServer.ini"},
+  "dependencies": []
+}
