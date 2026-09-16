@@ -10,14 +10,27 @@ void PlayerCapMod::Log(std::string_view message) const noexcept {
 bool PlayerCapMod::IsSupportedBuild() const {
     BcBuild build{sizeof(build)};
     return api_->get_build && api_->get_build(api_->context, &build) == BC_OK &&
+#ifdef __linux__
+           build.pe_timestamp == 0 && build.image_size == 0 &&
+#else
            build.pe_timestamp == 0x6a966107 && build.image_size == 0x05b60000 &&
+#endif
            std::strcmp(build.executable_sha256, game_hash) == 0;
 }
 void PlayerCapMod::StageChanges() const {
     const briefcase::Services services(api_);
     constexpr auto section = "/Script/DeceiveInc.TripwireServerSettings";
     const auto mode = services.ini("server-settings", section, "GameMode");
+#ifdef __linux__
+    auto manager = manager_code(limits_), session = session_code(limits_);
+    const BcCodePatch code[] = {
+        {sizeof(BcCodePatch),0x314d1c7,sizeof(linux_manager),0,linux_manager,manager.data()},
+        {sizeof(BcCodePatch),0x3481dc7,sizeof(linux_session),0,linux_session,session.data()}};
+    const auto& startup = services.service<BcStartupApi>(BC_STARTUP_SERVICE);
+    if(startup.stage_code(api_->context,game_hash,code,2)!=BC_OK) throw std::runtime_error("Linux scalar limits rejected");
+#else
     services.stage(game_hash, patches(limits_));
+#endif
     if (auto cap = limits_.active(mode)) {
         const auto value = std::to_string(*cap);
         services.stage_ini("server-settings", section, "MaxPlayers", value.c_str());
@@ -27,7 +40,7 @@ void PlayerCapMod::StageChanges() const {
         Log(std::format("Mode {}: MaxPlayers unchanged; staged Solo={}, Duo={}; Trio unchanged", mode,
                         limits_.solo, limits_.duo));
     }
-    Log("Four validated immediates staged (dedicated manager + EOS session); host commit pending");
+    Log("Validated player limits staged (dedicated manager + EOS session); host commit pending");
 }
 BcResult PlayerCapMod::Load(const BcApi *api) noexcept {
     if (api_)

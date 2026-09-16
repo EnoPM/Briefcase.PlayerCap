@@ -3,7 +3,7 @@
   "id": "briefcase.player-cap",
   "name": "Briefcase Player Cap",
   "author": "BriefcaseNative",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "entry": "Briefcase.PlayerCap.dll",
   "minimumApi": 1,
   "loadPhase": "startup",
