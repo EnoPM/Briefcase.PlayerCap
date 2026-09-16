@@ -8,6 +8,7 @@
   "minimumApi": 1,
   "loadPhase": "startup",
   "environment": "server",
+  "update": {"provider": "github-releases", "repository": "EnoPM/Briefcase.PlayerCap"},
   "capabilities": ["log", "config", "startup.immediate", "server-config.ini"],
   "iniBindings": {"server-settings": "TripwireServer.ini"},
   "dependencies": []
