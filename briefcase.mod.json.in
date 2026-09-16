@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "briefcase.player-cap",
   "name": "Briefcase Player Cap",
-  "author": "BriefcaseNative",
+  "author": "EnoPM",
   "version": "@MOD_VERSION@",
   "entry": "Briefcase.PlayerCap.dll",
   "minimumApi": 1,
