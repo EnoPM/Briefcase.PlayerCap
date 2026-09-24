@@ -13,7 +13,7 @@ bool PlayerCapMod::IsSupportedBuild() const {
 #ifdef __linux__
            build.pe_timestamp == 0 && build.image_size == 0 &&
 #else
-           build.pe_timestamp == 0x6a966107 && build.image_size == 0x05b60000 &&
+           build.pe_timestamp == 0x6aac58e0 && build.image_size == 0x05af8000 &&
 #endif
            std::strcmp(build.executable_sha256, game_hash) == 0;
 }
