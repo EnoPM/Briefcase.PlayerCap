@@ -15,7 +15,7 @@ BriefcasePlayerCap : 1
 
 5. Start `DeceiveIncServer-Win64-Shipping.exe` with Win64 as its working directory. The Briefcase `version.dll` loads this mod through UE4SS.
 
-When upgrading from an older Briefcase mod package, copy your desired settings and remove the old `Briefcase/Mods/briefcase.player-cap` folder before starting the server, so both versions do not run together. Keep your existing `Data/config.json` when replacing this UE4SS mod.
+When upgrading from an older Briefcase mod package, remove the old `Briefcase/Mods/briefcase.player-cap` folder before starting the server, so both versions do not run together. The old `soloLimit` and `duoLimit` configuration does not apply to this UE4SS version; choose the player count through the server's `MaxPlayers` setting instead. You may remove the old `ue4ss/Mods/BriefcasePlayerCap/Data/config.json` if you installed version 0.3.5.
 
 ## Choose the player count
 
