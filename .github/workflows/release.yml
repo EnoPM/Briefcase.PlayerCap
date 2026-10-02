@@ -79,6 +79,14 @@ jobs:
         run: |
           $archive = ./framework/scripts/ue4ss/Package-ServerMod.ps1 -RepositoryName Briefcase.PlayerCap -InstallName BriefcasePlayerCap -BuildDirectory ./framework/build-ue4ss-ninja -PreEntry
           ./framework/repositories/Briefcase.PlayerCap/scripts/Remove-LegacyConfig.ps1 -Archive $archive
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $license = 'framework/repositories/Briefcase.PlayerCap/LICENSE'
+          $zip = [IO.Compression.ZipFile]::Open($archive, [IO.Compression.ZipArchiveMode]::Update)
+          try {
+            if (-not $zip.GetEntry('ue4ss/Mods/BriefcasePlayerCap/LICENSE')) {
+              [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $license, 'ue4ss/Mods/BriefcasePlayerCap/LICENSE') | Out-Null
+            }
+          } finally { $zip.Dispose() }
           $draft = $env:RELEASE_DRAFT -eq 'true'
           ./framework/scripts/ue4ss/Publish-ServerMod.ps1 -RepositoryName Briefcase.PlayerCap -Repository $env:GITHUB_REPOSITORY -Commit $env:GITHUB_SHA -Archive $archive -Draft
           $version = (Get-Content framework/repositories/Briefcase.PlayerCap/VERSION -Raw).Trim()

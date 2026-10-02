@@ -26,3 +26,7 @@ The package contains both `ue4ss/Mods/BriefcasePlayerCap/dlls/main.dll` and `Bri
 ## Remove
 
 Stop the server, remove `ue4ss/Mods/BriefcasePlayerCap`, and remove its line from `ue4ss/Mods/mods.txt`. Restart the server.
+
+## License
+
+This mod is licensed under the [MIT License](LICENSE). Third-party components retain their own licenses.
