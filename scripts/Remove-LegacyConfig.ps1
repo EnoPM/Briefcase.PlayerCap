@@ -9,7 +9,7 @@ $archivePath = [IO.Path]::GetFullPath($Archive)
 if ($archivePath -ine $expected) { throw 'Unexpected PlayerCap archive path.' }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$legacyConfig = 'ue4ss/Mods/BriefcasePlayerCap/Data/config.json'
+$legacyConfig = 'ue4ss/Mods/briefcaseplayercap/Data/config.json'
 $zip = [IO.Compression.ZipFile]::Open($archivePath, [IO.Compression.ZipArchiveMode]::Update)
 try {
     $entry = $zip.GetEntry($legacyConfig)
@@ -22,8 +22,8 @@ try {
 $zip = [IO.Compression.ZipFile]::OpenRead($archivePath)
 try {
     if ($zip.GetEntry($legacyConfig)) { throw 'Legacy config remains in PlayerCap archive.' }
-    foreach ($required in @('ue4ss/Mods/BriefcasePlayerCap/dlls/main.dll',
-                            'ue4ss/Mods/BriefcasePlayerCap/BriefcasePreEntry.dll')) {
+    foreach ($required in @('ue4ss/Mods/briefcaseplayercap/dlls/main.dll',
+                            'ue4ss/Mods/briefcaseplayercap/BriefcasePreEntry.dll')) {
         if (-not $zip.GetEntry($required)) { throw "PlayerCap archive is missing $required" }
     }
 } finally {

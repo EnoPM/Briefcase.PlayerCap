@@ -13,7 +13,7 @@ namespace briefcase::deceive {
 namespace {
 struct ImageSections {
     std::uint8_t *base{};
-    std::span<const std::uint8_t> text, rdata;
+    std::span<const std::uint8_t> text;
     std::uint32_t text_rva{};
 };
 
@@ -40,12 +40,10 @@ ImageSections server_sections() {
         if (std::memcmp(section.Name, ".text", 5) == 0) {
             result.text = {base + start, size};
             result.text_rva = start;
-        } else if (std::memcmp(section.Name, ".rdata", 6) == 0) {
-            result.rdata = {base + start, size};
         }
     }
-    if (result.text.empty() || result.rdata.empty())
-        throw std::runtime_error("Server code or metadata section is missing");
+    if (result.text.empty())
+        throw std::runtime_error("Server code section is missing");
     return result;
 }
 
@@ -85,8 +83,6 @@ void write(Change &change, bool restore = false) {
 PlayerCapResult raise_player_ceiling() {
     const auto sections = server_sections();
     const auto sites = detail::find_limit_sites(sections.text);
-    const auto editor = detail::find_editor_limit_sites(sections.text);
-    detail::find_ui_maximum(sections.rdata);
 
     std::vector<Change> changes{
         scalar_change(sections.text, sites.manager_trio, 32),
@@ -95,11 +91,6 @@ PlayerCapResult raise_player_ceiling() {
         scalar_change(sections.text, sites.session_trio, 32),
         scalar_change(sections.text, sites.session_duo, 32),
         scalar_change(sections.text, sites.session_solo, 32)};
-    for (const auto &site : editor) {
-        changes.push_back(scalar_change(sections.text, site.manager_trio, 32));
-        changes.push_back(scalar_change(sections.text, site.manager_duo, 32));
-        changes.push_back(scalar_change(sections.text, site.manager_solo, 32));
-    }
 
     PlayerCapResult result{
         sections.text_rva + static_cast<std::uint32_t>(sites.manager_trio.offset),

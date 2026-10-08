@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: EnoPM/BriefcaseNative
-          ref: v0.8.3
+          ref: v0.8.5
           path: framework
           persist-credentials: false
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -77,25 +77,51 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_DRAFT: ${{ inputs.draft }}
         run: |
-          $archive = ./framework/scripts/ue4ss/Package-ServerMod.ps1 -RepositoryName Briefcase.PlayerCap -InstallName BriefcasePlayerCap -BuildDirectory ./framework/build-ue4ss-ninja -PreEntry
+          $archive = ./framework/scripts/ue4ss/Package-ServerMod.ps1 -RepositoryName Briefcase.PlayerCap -InstallName briefcaseplayercap -BuildDirectory ./framework/build-ue4ss-ninja -PreEntry
           ./framework/repositories/Briefcase.PlayerCap/scripts/Remove-LegacyConfig.ps1 -Archive $archive
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           $license = 'framework/repositories/Briefcase.PlayerCap/LICENSE'
           $zip = [IO.Compression.ZipFile]::Open($archive, [IO.Compression.ZipArchiveMode]::Update)
           try {
-            if (-not $zip.GetEntry('ue4ss/Mods/BriefcasePlayerCap/LICENSE')) {
-              [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $license, 'ue4ss/Mods/BriefcasePlayerCap/LICENSE') | Out-Null
+            if (-not $zip.GetEntry('ue4ss/Mods/briefcaseplayercap/LICENSE')) {
+              [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $license, 'ue4ss/Mods/briefcaseplayercap/LICENSE') | Out-Null
             }
           } finally { $zip.Dispose() }
           $draft = $env:RELEASE_DRAFT -eq 'true'
-          ./framework/scripts/ue4ss/Publish-ServerMod.ps1 -RepositoryName Briefcase.PlayerCap -Repository $env:GITHUB_REPOSITORY -Commit $env:GITHUB_SHA -Archive $archive -Draft
           $version = (Get-Content framework/repositories/Briefcase.PlayerCap/VERSION -Raw).Trim()
+          $catalogPath = Join-Path (Split-Path $archive -Parent) 'catalog.json'
+          $catalog = [ordered]@{
+            schemaVersion = 2
+            mods = @([ordered]@{
+              id = 'briefcaseplayercap'
+              name = 'Player Cap'
+              description = 'Raise Solo, Duo and Trio player ceilings to 32 while keeping the configured MaxPlayers value.'
+              version = $version
+              author = 'EnoPM'
+              downloadUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v$version/$(Split-Path $archive -Leaf)"
+              archiveSha256 = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+              documentationUrl = "https://github.com/$env:GITHUB_REPOSITORY#readme"
+              homepageUrl = "https://github.com/$env:GITHUB_REPOSITORY"
+            })
+          }
+          [IO.File]::WriteAllText($catalogPath, ($catalog | ConvertTo-Json -Depth 5), [Text.UTF8Encoding]::new($false))
+          ./framework/scripts/ue4ss/Publish-ServerMod.ps1 -RepositoryName Briefcase.PlayerCap -Repository $env:GITHUB_REPOSITORY -Commit $env:GITHUB_SHA -Archive $archive -Draft
+          gh release upload "v$version" $catalogPath --repo $env:GITHUB_REPOSITORY
+          if ($LASTEXITCODE) { throw 'Failed to upload PlayerCap marketplace catalog.' }
+          $release = gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/v$version" | ConvertFrom-Json
+          $catalogAssets = @($release.assets | Where-Object { $_.name -ceq 'catalog.json' })
+          $catalogHash = (Get-FileHash $catalogPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if (-not $release.draft -or $catalogAssets.Count -ne 1 -or
+              $catalogAssets[0].digest -cne "sha256:$catalogHash") {
+            throw 'PlayerCap marketplace catalog verification failed; release remains a draft.'
+          }
           $notesFile = Join-Path $env:RUNNER_TEMP 'playercap-release-notes.md'
           @(
             "PlayerCap $version for Windows x64 dedicated servers."
             ''
             'Install the matching BriefcaseNative server release, then follow the README included in this archive.'
             'This version has no Solo/Duo configuration file. Set MaxPlayers in the server settings; PlayerCap raises the native Solo, Duo and Trio ceilings to 32.'
+            'The vanilla Server Config window keeps its original limits. Start the server headless from Briefcase App to use PlayerCap.'
           ) | Set-Content -LiteralPath $notesFile -Encoding utf8
           gh release edit "v$version" --repo $env:GITHUB_REPOSITORY --notes-file $notesFile
           if ($LASTEXITCODE) { throw 'Failed to update PlayerCap release notes.' }

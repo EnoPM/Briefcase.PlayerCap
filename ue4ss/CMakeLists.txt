@@ -17,7 +17,7 @@ add_library(Briefcase.PlayerCap.PreEntry SHARED
   PlayerLimitSites.cpp)
 target_include_directories(Briefcase.PlayerCap.PreEntry PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(Briefcase.PlayerCap.PreEntry PRIVATE Zydis)
+target_link_libraries(Briefcase.PlayerCap.PreEntry PRIVATE Zydis shell32)
 target_compile_features(Briefcase.PlayerCap.PreEntry PRIVATE cxx_std_20)
 set_target_properties(Briefcase.PlayerCap.PreEntry PROPERTIES OUTPUT_NAME BriefcasePreEntry)
 
