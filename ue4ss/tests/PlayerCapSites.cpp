@@ -52,6 +52,30 @@ void synthetic_code() {
     rejects([&] { find_limit_sites(code); }, "Two manager sites were accepted");
 }
 
+void synthetic_modern_code() {
+    constexpr auto manager = std::to_array<std::uint8_t>({
+        0x83,0xe9,2,0x74,0x0b,0x41,0xb9,14,0,0,0,0x83,0xf9,1,
+        0x74,6,0x41,0xb9,15,0,0,0,0xc6,0x47,0x51,0});
+    constexpr auto session = std::to_array<std::uint8_t>({
+        0x41,0x0f,0xb6,0x48,0x60,0x83,0xe9,2,0x74,8,0x8d,0x42,14,
+        0x83,0xf9,1,0x74,5,0xb8,15,0,0,0,0x41,0x8b,0x48,0x48});
+    std::vector<std::uint8_t> code(256, 0xcc);
+    place(code, 23, manager);
+    place(code, 113, session);
+    const auto found = find_limit_sites(code);
+    check(found.manager_duo.offset == 30 && found.manager_duo.width == 4 &&
+          found.manager_solo.offset == 41 && found.manager_trio.offset == 41,
+          "Modern manager limits were not decoded correctly");
+    check(found.session_duo.offset == 125 && found.session_duo.width == 1 &&
+          found.session_solo.offset == 132 && found.session_trio.offset == 132,
+          "Modern EOS session limits were not decoded correctly");
+    code[23 + 4] = 0x0c;
+    rejects([&] { find_limit_sites(code); }, "Changed modern branch target was accepted");
+    code[23 + 4] = 0x0b;
+    place(code, 171, manager);
+    rejects([&] { find_limit_sites(code); }, "Two modern manager sites were accepted");
+}
+
 std::uint32_t read32(const std::vector<std::uint8_t> &data, std::size_t at) {
     std::uint32_t result{};
     check(at <= data.size() && data.size() - at >= sizeof(result), "Invalid PE offset");
@@ -96,12 +120,15 @@ void installed_server(const std::filesystem::path &path, bool print_sites = fals
                 std::memcpy(&value, image.data() + raw_offset + site.offset, site.width);
                 return value;
             };
-            check(immediate_at(sites.manager_trio) == 12 &&
-                  immediate_at(sites.manager_duo) == 10 &&
-                  immediate_at(sites.manager_solo) == 8 &&
-                  immediate_at(sites.session_trio) == 12 &&
-                  immediate_at(sites.session_duo) == 10 &&
-                  immediate_at(sites.session_solo) == 8,
+            const auto limits_match = [&](unsigned trio, unsigned duo, unsigned solo) {
+                return immediate_at(sites.manager_trio) == trio &&
+                       immediate_at(sites.manager_duo) == duo &&
+                       immediate_at(sites.manager_solo) == solo &&
+                       immediate_at(sites.session_trio) == trio &&
+                       immediate_at(sites.session_duo) == duo &&
+                       immediate_at(sites.session_solo) == solo;
+            };
+            check(limits_match(12, 10, 8) || limits_match(15, 14, 15),
                   "Installed server resolved unexpected vanilla player limits");
             text_found = true;
         }
@@ -113,6 +140,7 @@ void installed_server(const std::filesystem::path &path, bool print_sites = fals
 int main(int argc, char **argv) {
     try {
         synthetic_code();
+        synthetic_modern_code();
         if (argc > 1) installed_server(argv[1], argc > 2 && std::strcmp(argv[2], "--sites") == 0);
         std::cout << "PASS PlayerCap native site discovery and ambiguity contracts\n";
     } catch (const std::exception &error) {

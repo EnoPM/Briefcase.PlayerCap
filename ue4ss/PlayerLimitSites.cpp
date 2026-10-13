@@ -70,6 +70,25 @@ std::optional<LimitSites> manager_at(const ZydisDecoder &decoder,
     return LimitSites{*trio, *duo, *solo};
 }
 
+std::optional<LimitSites> manager_modern_at(const ZydisDecoder &decoder,
+                                            std::span<const std::uint8_t> text, std::size_t at) {
+    std::size_t cursor = at;
+    std::array<Instruction, 7> ins{};
+    for (auto &item : ins) if (!decode(decoder, text, cursor, item)) return std::nullopt;
+    if (!reg_imm(ins[0], ZYDIS_MNEMONIC_SUB, ZYDIS_REGISTER_ECX, 2) ||
+        !reg_imm(ins[2], ZYDIS_MNEMONIC_MOV, ZYDIS_REGISTER_R9D, 14) ||
+        !reg_imm(ins[3], ZYDIS_MNEMONIC_CMP, ZYDIS_REGISTER_ECX, 1) ||
+        !reg_imm(ins[5], ZYDIS_MNEMONIC_MOV, ZYDIS_REGISTER_R9D, 15) ||
+        branch_target(ins[1], ZYDIS_MNEMONIC_JZ) != ins[5].at ||
+        branch_target(ins[4], ZYDIS_MNEMONIC_JZ) != ins[6].at ||
+        ins[6].code.mnemonic != ZYDIS_MNEMONIC_MOV ||
+        ins[6].operands[0].type != ZYDIS_OPERAND_TYPE_MEMORY ||
+        ins[6].operands[0].mem.base != ZYDIS_REGISTER_RDI) return std::nullopt;
+    const auto duo = immediate(ins[2], 32), solo_and_trio = immediate(ins[5], 32);
+    if (!duo || !solo_and_trio) return std::nullopt;
+    return LimitSites{*solo_and_trio, *duo, *solo_and_trio};
+}
+
 std::optional<LimitSites> session_at(const ZydisDecoder &decoder,
                                      std::span<const std::uint8_t> text, std::size_t at) {
     std::size_t cursor = at;
@@ -109,6 +128,41 @@ std::optional<LimitSites> session_at(const ZydisDecoder &decoder,
                       {ins[5].at + ins[5].code.raw.disp.offset, 1}, *duo, *solo};
 }
 
+std::optional<LimitSites> session_modern_at(const ZydisDecoder &decoder,
+                                            std::span<const std::uint8_t> text, std::size_t at) {
+    std::size_t cursor = at;
+    std::array<Instruction, 8> ins{};
+    for (auto &item : ins) if (!decode(decoder, text, cursor, item)) return std::nullopt;
+    if (ins[0].code.mnemonic != ZYDIS_MNEMONIC_MOVZX ||
+        ins[0].code.operand_count_visible != 2 ||
+        ins[0].operands[0].type != ZYDIS_OPERAND_TYPE_REGISTER ||
+        ins[0].operands[0].reg.value != ZYDIS_REGISTER_ECX ||
+        ins[0].operands[1].type != ZYDIS_OPERAND_TYPE_MEMORY ||
+        ins[0].operands[1].mem.base != ZYDIS_REGISTER_R8 ||
+        !reg_imm(ins[1], ZYDIS_MNEMONIC_SUB, ZYDIS_REGISTER_ECX, 2) ||
+        ins[3].code.mnemonic != ZYDIS_MNEMONIC_LEA ||
+        ins[3].code.operand_count_visible != 2 ||
+        ins[3].operands[0].type != ZYDIS_OPERAND_TYPE_REGISTER ||
+        ins[3].operands[0].reg.value != ZYDIS_REGISTER_EAX ||
+        ins[3].operands[1].type != ZYDIS_OPERAND_TYPE_MEMORY ||
+        ins[3].operands[1].mem.base != ZYDIS_REGISTER_RDX ||
+        ins[3].operands[1].mem.disp.value != 14 ||
+        ins[3].code.raw.disp.size != 8 ||
+        !reg_imm(ins[4], ZYDIS_MNEMONIC_CMP, ZYDIS_REGISTER_ECX, 1) ||
+        !reg_imm(ins[6], ZYDIS_MNEMONIC_MOV, ZYDIS_REGISTER_EAX, 15) ||
+        branch_target(ins[2], ZYDIS_MNEMONIC_JZ) != ins[6].at ||
+        branch_target(ins[5], ZYDIS_MNEMONIC_JZ) != ins[7].at ||
+        ins[7].code.mnemonic != ZYDIS_MNEMONIC_MOV ||
+        ins[7].operands[0].type != ZYDIS_OPERAND_TYPE_REGISTER ||
+        ins[7].operands[0].reg.value != ZYDIS_REGISTER_ECX ||
+        ins[7].operands[1].type != ZYDIS_OPERAND_TYPE_MEMORY ||
+        ins[7].operands[1].mem.base != ZYDIS_REGISTER_R8) return std::nullopt;
+    const auto solo_and_trio = immediate(ins[6], 32);
+    if (!solo_and_trio) return std::nullopt;
+    const ScalarSite duo{ins[3].at + ins[3].code.raw.disp.offset, 1};
+    return LimitSites{{}, {}, {}, *solo_and_trio, duo, *solo_and_trio};
+}
+
 } // namespace
 
 LimitSites find_limit_sites(std::span<const std::uint8_t> text) {
@@ -119,13 +173,17 @@ LimitSites find_limit_sites(std::span<const std::uint8_t> text) {
     std::optional<LimitSites> manager, session;
     for (std::size_t i = 0; i + 48 < text.size(); ++i) {
         if (text[i] == 0x83 && text[i + 1] == 0xe9 && text[i + 2] == 2) {
-            if (auto candidate = manager_at(decoder, text, i)) {
+            auto candidate = manager_at(decoder, text, i);
+            if (!candidate) candidate = manager_modern_at(decoder, text, i);
+            if (candidate) {
                 if (manager) throw std::runtime_error("Ambiguous dedicated-manager player limit");
                 manager = candidate;
             }
         }
         if (text[i] == 0x41 && text[i + 1] == 0x0f && text[i + 2] == 0xb6) {
-            if (auto candidate = session_at(decoder, text, i)) {
+            auto candidate = session_at(decoder, text, i);
+            if (!candidate) candidate = session_modern_at(decoder, text, i);
+            if (candidate) {
                 if (session) throw std::runtime_error("Ambiguous EOS-session player limit");
                 session = candidate;
             }

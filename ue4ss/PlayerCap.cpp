@@ -3,6 +3,7 @@
 #ifdef _WIN32
 #include "PlayerLimitSites.hpp"
 #include <Windows.h>
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <span>
@@ -84,13 +85,14 @@ PlayerCapResult raise_player_ceiling() {
     const auto sections = server_sections();
     const auto sites = detail::find_limit_sites(sections.text);
 
-    std::vector<Change> changes{
-        scalar_change(sections.text, sites.manager_trio, 32),
-        scalar_change(sections.text, sites.manager_duo, 32),
-        scalar_change(sections.text, sites.manager_solo, 32),
-        scalar_change(sections.text, sites.session_trio, 32),
-        scalar_change(sections.text, sites.session_duo, 32),
-        scalar_change(sections.text, sites.session_solo, 32)};
+    std::vector<Change> changes;
+    for (const auto site : {sites.manager_trio, sites.manager_duo, sites.manager_solo,
+                            sites.session_trio, sites.session_duo, sites.session_solo}) {
+        auto change = scalar_change(sections.text, site, 32);
+        if (std::none_of(changes.begin(), changes.end(), [&](const Change &prior) {
+                return prior.address == change.address;
+            })) changes.push_back(change);
+    }
 
     PlayerCapResult result{
         sections.text_rva + static_cast<std::uint32_t>(sites.manager_trio.offset),

@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: EnoPM/BriefcaseNative
-          ref: v0.8.5
+          ref: v0.8.7
           path: framework
           persist-credentials: false
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -113,7 +113,7 @@ jobs:
             mods = @([ordered]@{
               id = 'briefcaseplayercap'
               name = 'Player Cap'
-              description = 'Raise Solo, Duo and Trio player ceilings to 32 while keeping the configured MaxPlayers value.'
+              description = 'Raise Solo, Duo and Trio player ceilings to 30 while keeping the configured MaxPlayers value.'
               version = $version
               author = 'EnoPM'
               downloadUrl = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/v$version/$(Split-Path $archive -Leaf)"

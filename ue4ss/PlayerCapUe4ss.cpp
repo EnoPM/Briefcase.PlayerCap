@@ -32,8 +32,8 @@ class PlayerCapUe4ss final : public CppUserModBase {
         ModVersion = briefcase_mod_version;
         ModAuthors = STR("EnoPM");
         if (early_patch_applied()) {
-            ModDescription = STR("Raises Solo, Duo and Trio ceilings to 32 players");
-            Output::send(STR("[Briefcase.PlayerCap] headless server: Solo/Duo/Trio ceilings=32 verified; configured MaxPlayers remains effective\n"));
+            ModDescription = STR("Allows up to 30 configured players in Solo, Duo and Trio");
+            Output::send(STR("[Briefcase.PlayerCap] headless server: configured MaxPlayers up to 30; native ceilings raised\n"));
         } else {
             ModDescription = STR("Inactive while the vanilla Server Config window is available");
             Output::send(STR("[Briefcase.PlayerCap] vanilla Server Config mode: native limits unchanged to avoid its shutdown crash\n"));

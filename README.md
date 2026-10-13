@@ -1,6 +1,6 @@
 # Briefcase Player Cap
 
-Player Cap raises the built-in Solo, Duo and Trio player ceilings to 32 on a Windows x64 Deceive Inc. dedicated server. It leaves the server's chosen `MaxPlayers` value in control; it does not force 32 players.
+Player Cap allows up to 30 configured players in Solo, Duo and Trio on a Windows x64 Deceive Inc. dedicated server. It leaves the server's chosen `MaxPlayers` value in control; it does not force 30 players. The internal native ceiling is raised slightly higher to allow the configured limit.
 
 ## Install
 
@@ -29,7 +29,7 @@ When upgrading from an older Briefcase mod package, remove the old `Briefcase/Mo
 
 ## Choose the player count
 
-Set `MaxPlayers` to a value from **1 to 32** in Briefcase App or edit `DeceiveInc/Saved/Config/WindowsServer/TripwireServer.ini` while the server is stopped. The setting is under `[/Script/DeceiveInc.TripwireServerSettings]`. Restart after changing it.
+Set `MaxPlayers` to a value from **1 to 30** in Briefcase App or edit `DeceiveInc/Saved/Config/WindowsServer/TripwireServer.ini` while the server is stopped. The setting is under `[/Script/DeceiveInc.TripwireServerSettings]`. Restart after changing it.
 
 The package contains both `ue4ss/Mods/briefcaseplayercap/dlls/main.dll` and `BriefcasePreEntry.dll` in the same mod folder. Both files are required. The second file applies the ceiling before the game reads its player settings on a headless launch.
 
