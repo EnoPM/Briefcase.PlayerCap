@@ -143,7 +143,7 @@ jobs:
             "PlayerCap $version for Windows x64 dedicated servers."
             ''
             'Install the matching BriefcaseNative server release, then follow the README included in this archive.'
-            'This version has no Solo/Duo configuration file. Set MaxPlayers in the server settings; PlayerCap raises the native Solo, Duo and Trio ceilings to 32.'
+            'This version has no Solo/Duo configuration file. Set MaxPlayers in the server settings to a value up to 30.'
             'The vanilla Server Config window keeps its original limits. Start the server headless from Briefcase App to use PlayerCap.'
           ) | Set-Content -LiteralPath $notesFile -Encoding utf8
           gh release edit "v$version" --repo $env:GITHUB_REPOSITORY --notes-file $notesFile

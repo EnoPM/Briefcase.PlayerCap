@@ -2,6 +2,14 @@
 
 Player Cap allows up to 30 configured players in Solo, Duo and Trio on a Windows x64 Deceive Inc. dedicated server. It leaves the server's chosen `MaxPlayers` value in control; it does not force 30 players. The internal native ceiling is raised slightly higher to allow the configured limit.
 
+The Linux x64 package provides the same configured limit through BriefcaseNative's
+startup patch API. Download `Briefcase.PlayerCap-linux-x64-<version>.zip` and
+extract it into the Linux server's `DeceiveInc/Binaries/Linux` directory while
+the server is stopped. Enable `briefcase.player-cap` in
+`Briefcase/settings.json`, then set `MaxPlayers` in Briefcase App. The Linux
+package has no separate mod configuration file; it requires BriefcaseNative
+0.8.7 or later and the supported Linux dedicated-server build.
+
 ## Install
 
 In Briefcase App, add `https://github.com/EnoPM/Briefcase.PlayerCap/releases/latest/download/catalog.json` as a marketplace source in Settings, then open the server's Mods → Available Mods tab and install Player Cap while the server is stopped. The app enables the mod automatically. Start the server from Briefcase App to apply it.

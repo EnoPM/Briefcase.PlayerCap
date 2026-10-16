@@ -19,18 +19,19 @@ bool PlayerCapMod::IsSupportedBuild() const {
 }
 void PlayerCapMod::StageChanges() const {
     const briefcase::Services services(api_);
-    constexpr auto section = "/Script/DeceiveInc.TripwireServerSettings";
-    const auto mode = services.ini("server-settings", section, "GameMode");
 #ifdef __linux__
-    auto manager = manager_code(limits_), session = session_code(limits_);
+    auto manager = manager_code(), session = session_code();
     const BcCodePatch code[] = {
         {sizeof(BcCodePatch),0x314d1c7,sizeof(linux_manager),0,linux_manager,manager.data()},
         {sizeof(BcCodePatch),0x3481dc7,sizeof(linux_session),0,linux_session,session.data()}};
     const auto& startup = services.service<BcStartupApi>(BC_STARTUP_SERVICE);
-    if(startup.stage_code(api_->context,game_hash,code,2)!=BC_OK) throw std::runtime_error("Linux scalar limits rejected");
+    if (startup.stage_code(api_->context,game_hash,code,2)!=BC_OK)
+        throw std::runtime_error("Linux player ceilings rejected");
+    Log("Staged native Solo, Duo and Trio ceilings of 30; configured MaxPlayers unchanged");
 #else
+    constexpr auto section = "/Script/DeceiveInc.TripwireServerSettings";
+    const auto mode = services.ini("server-settings", section, "GameMode");
     services.stage(game_hash, patches(limits_));
-#endif
     if (auto cap = limits_.active(mode)) {
         const auto value = std::to_string(*cap);
         services.stage_ini("server-settings", section, "MaxPlayers", value.c_str());
@@ -41,6 +42,7 @@ void PlayerCapMod::StageChanges() const {
                         limits_.solo, limits_.duo));
     }
     Log("Validated player limits staged (dedicated manager + EOS session); host commit pending");
+#endif
 }
 BcResult PlayerCapMod::Load(const BcApi *api) noexcept {
     if (api_)
@@ -54,7 +56,9 @@ BcResult PlayerCapMod::Load(const BcApi *api) noexcept {
             Unload();
             return BC_VERSION_MISMATCH;
         }
+#ifndef __linux__
         limits_ = Limits::parse(briefcase::Services(api_).config(schema));
+#endif
         StageChanges();
         return BC_OK;
     } catch (const std::exception &e) {

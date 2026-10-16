@@ -191,7 +191,7 @@ struct Backend {
         startup.stage_code = [](void* c,const char* sha,const BcCodePatch* p,uint32_t n) -> BcResult {
             if(!sha || std::strcmp(sha,hash) || n!=2 || p[0].window_size!=23 || p[1].window_size!=25) return BC_INVALID_ARGUMENT;
             auto& b=get(c);
-            b.staged={p[0].replacement[5],p[0].replacement[17],p[1].replacement[12],p[1].replacement[20]};
+            b.staged={p[0].replacement[1],p[0].replacement[6],p[1].replacement[1],p[1].replacement[6]};
             return BC_OK;
         };
         startup.stage_i32 = [](void *c, const char *sha, const BcImmediatePatch *p,
